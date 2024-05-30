@@ -1,7 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+
+
+function Test() {
+  const [res,setRes] = useState('');
+  useEffect(() => {
+    fetch("/api/test", {
+      method: "GET",
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setRes(data.test);
+        console.log("HI");
+        console.log(data);
+      })
+      .catch((error) => console.log(error));
+  }, []);
+  return res
+}
 
 function App() {
   const [count, setCount] = useState(0)
@@ -17,6 +35,7 @@ function App() {
         </a>
       </div>
       <h1>Vite + React</h1>
+      <h2>{Test()}</h2>
       <div className="card">
         <button onClick={() => setCount((count) => count + 1)}>
           count is {count}
