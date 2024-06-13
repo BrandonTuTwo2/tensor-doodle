@@ -29,12 +29,12 @@ function App() {
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isPressed, setIsPressed] = useState(false);
 
-  const loadHandPose = async () =>{
+  const loadHandPose = async () => {
     const model = await handpose.load();
 
 
     const detect = async (model: handpose.HandPose) => {
-      if(typeof webCamRef.current !== "undefined" && webCamRef.current !== null && webCamRef.current.video?.readyState === 4) {
+      if (typeof webCamRef.current !== "undefined" && webCamRef.current !== null && webCamRef.current.video?.readyState === 4) {
         const videoFeed = webCamRef.current.video;
         const vidWidth = webCamRef.current.video.videoWidth;
         const vidHeight = webCamRef.current.video.videoHeight;
@@ -42,15 +42,22 @@ function App() {
         webCamRef.current.video.width = vidWidth;
         webCamRef.current.video.height = vidHeight;
 
-        const predictions = await model.estimateHands(document.querySelector("video"));
-        console.log(predictions);
+        if (canvasRef.current == null) return;
+        canvasRef.current.width = vidWidth;
+        canvasRef.current.height = vidHeight;
+
+        const predictions = await model.estimateHands(videoFeed);
+        const ctx = canvasRef.current.getContext("2d");
+        if (ctx == null) return;
+        ctxRef.current = ctx
+
         drawHand(predictions);
       }
     }
 
-    setInterval(() =>{
+    setInterval(() => {
       detect(model)
-    },100)
+    }, 100)
   }
 
 
@@ -78,39 +85,39 @@ function App() {
   };
 
   const clear = () => {
-    if(ctxRef.current == null) return;
-    if(canvasRef.current == null) return;
+    if (ctxRef.current == null) return;
+    if (canvasRef.current == null) return;
 
-    ctxRef.current.clearRect(0,0,canvasRef.current.width,canvasRef.current.height);
+    ctxRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
   }
 
   const drawHand = (predictions: handpose.AnnotatedPrediction[]) => {
-    if(predictions.length > 0) {
+    if (predictions.length > 0) {
       predictions.forEach(prediction => {
         const landmarks = prediction.landmarks;
-        for (let i = 0;i < landmarks.length;i++){
+        for (let i = 0; i < landmarks.length; i++) {
           const x = landmarks[i][0];
-          const y = landmarks[i][0]
-          if (ctxRef.current == null) return;
+          const y = landmarks[i][1];
+          if(ctxRef.current === null) return;
           ctxRef.current.beginPath();
-          ctxRef.current.arc(x,y,5,0,3* Math.PI);
+          ctxRef.current.arc(x, y, 5, 0, 3 * Math.PI);
 
           ctxRef.current.fillStyle = "indigo";
           ctxRef.current.fill()
         }
-        
+
       });
     }
   }
 
 
 
-
+  
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas == null) return;
-    canvas.width = 900 //im probably going to make it based on the window size
-    canvas.height = 800 //ditto
+    //canvas.width = 900 //im probably going to make it based on the window size
+    //canvas.height = 900 //ditto
 
     const ctx = canvas.getContext("2d");
     if (ctx == null) return;
@@ -125,15 +132,34 @@ function App() {
   return (
     <>
       <h1>Tensor Doodle ✏️</h1>
-      <Webcam ref={webCamRef} 
-      style={{
-        width:400,
-        height:400
-      }}/>
-      <div>
       <button id="clearBtn" className='mt-3 mb-3' onClick={clear}>Clear</button>
-      <canvas ref={canvasRef} onMouseDown={startDrawing} onMouseMove={updateDrawing} onMouseUp={endDrawing} />
-    </div>
+      <Webcam ref={webCamRef} style={{
+        position: "absolute",
+        marginLeft: "auto",
+        marginRight: "auto",
+        left: 0,
+        right: 0,
+        textAlign: "center",
+        zIndex: 9,
+        width:  "0%",
+        height: "0%",
+      }} 
+      videoConstraints={{
+        width: 720,
+        height: 560,
+        facingMode: "user",
+      }}/>
+      <canvas ref={canvasRef} style={{
+        position: "absolute",
+        marginLeft: "auto",
+        marginRight: "auto",
+        left: 0,
+        right: 0,
+        textAlign: "center",
+        zIndex: 20,
+        width: 720,
+        height: 560,
+      }} onMouseDown={startDrawing} onMouseMove={updateDrawing} onMouseUp={endDrawing} />
     </>
   )
 }
