@@ -38,10 +38,13 @@ const fingerJoints = {
 const pointerGesture = new GestureDescription('pointer');
 //index no curl
 pointerGesture.addCurl(Finger.Index, FingerCurl.NoCurl, 1.0);
+pointerGesture.addCurl(Finger.Index, FingerCurl.HalfCurl, -1.0);
+pointerGesture.addCurl(Finger.Index, FingerCurl.FullCurl, -1.0);
+
+let counter  = 0;
 //rest of the fingies
 for (const finger of [Finger.Middle, Finger.Pinky, Finger.Ring, Finger.Thumb]) {
   pointerGesture.addCurl(finger, FingerCurl.FullCurl, 1.0);
-  pointerGesture.addCurl(finger, FingerCurl.HalfCurl, 0.5);
 }
 
 
@@ -104,7 +107,7 @@ function App() {
         if (predictions[0] !== undefined) {
           //pointer detection
           const gestureEstimation = gestureEstimator.estimate(predictions[0].landmarks, 5);
-
+          
           if (gestureEstimation.gestures.length > 0) {
             ////console.log("Pointer is present?");
             ////console.log(gestureEstimation);
@@ -112,7 +115,7 @@ function App() {
             const landmarks = predictions[0].landmarks
             const xCord = landmarks[8][0]
             const yCord = landmarks[8][1]
-            
+            counter += 1
             if(drawingCtxRef.current === null) return;
             if(isRunning) {
               drawingCtxRef.current.beginPath();
@@ -124,8 +127,10 @@ function App() {
 
             ////console.log(`HERE IS ISPRESSED ${isPressed}`);
             ////console.log(`X:${xCord} Y:${yCord}`);
-            startDrawingFinger(xCord, yCord);
-
+            if(counter == 10){
+              startDrawingFinger(xCord, yCord);
+              counter = 0;
+            }
           } else {
             //console.log("DONE");
             if(drawingCtxRef.current === null) return;
@@ -133,6 +138,7 @@ function App() {
             drawingCtxRef.current.closePath();
             setIsPressed(false);
             isRunning = true;
+            counter = 0;
           }
 
           drawHand(predictions);
@@ -142,7 +148,7 @@ function App() {
 
     setInterval(() => {
       detect(model)
-    }, 100)
+    }, 28.571428571428573)
   }
 
 
