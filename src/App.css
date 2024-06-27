@@ -36,16 +36,7 @@
     animation: logo-spin infinite 20s linear;
   }
 }
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
 canvas {
-  aspect-ratio: 1/1;
   border: 1px solid black;
 }
 

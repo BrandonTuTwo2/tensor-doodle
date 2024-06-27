@@ -1,29 +1,12 @@
 import './App.css'
-import * as tf from "@tensorflow/tfjs";
 import * as handpose from "@tensorflow-models/handpose";
 import "@tensorflow/tfjs-backend-webgl"
 import Webcam from 'react-webcam';
 import { useEffect, useRef, useState } from 'react';
-
 import { GestureDescription, Finger, FingerCurl, GestureEstimator } from "fingerpose";
 
 
-/*function Test() {
-  const [res,setRes] = useState('');
-  useEffect(() => {
-    fetch("/api/test", {
-      method: "GET",
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setRes(data.test);
-        //console.log("HI");
-        //console.log(data);
-      })
-      .catch((error) => //console.log(error));
-  }, []);
-  return res
-}*/
+let counter  = 0;
 
 // Points for fingers
 const fingerJoints = {
@@ -41,7 +24,6 @@ pointerGesture.addCurl(Finger.Index, FingerCurl.NoCurl, 1.0);
 pointerGesture.addCurl(Finger.Index, FingerCurl.HalfCurl, -1.0);
 pointerGesture.addCurl(Finger.Index, FingerCurl.FullCurl, -1.0);
 
-let counter  = 0;
 //rest of the fingies
 for (const finger of [Finger.Middle, Finger.Pinky, Finger.Ring, Finger.Thumb]) {
   pointerGesture.addCurl(finger, FingerCurl.FullCurl, 1.0);
@@ -60,10 +42,15 @@ function App() {
 
   //does this need to be an array?
   const gestureEstimator = new GestureEstimator([pointerGesture])
-
+  const handPoseConfig = {
+    maxContinuousChecks: 15,
+    detectionConfidence: 0.95,
+    //iouThreshold: ;
+    scoreThreshold: 0.9,
+  }
 
   const loadHandPose = async () => {
-    const model = await handpose.load();
+    const model = await handpose.load(handPoseConfig);
     //console.log("MODEL HAS LOADED");
     //console.log(model)
 
@@ -127,7 +114,7 @@ function App() {
 
             ////console.log(`HERE IS ISPRESSED ${isPressed}`);
             ////console.log(`X:${xCord} Y:${yCord}`);
-            if(counter == 10){
+            if(counter == 7){
               startDrawingFinger(xCord, yCord);
               counter = 0;
             }
@@ -255,17 +242,12 @@ function App() {
   useEffect(() => {
     const canvas = drawingCanvasRef.current;
     if (canvas == null) return;
-    //canvas.width = 900 //im probably going to make it based on the window size
-    //canvas.height = 900 //ditto
     const ctx = canvas.getContext("2d");
     if (ctx == null) return;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 3;
     drawingCtxRef.current = ctx;
-    loadHandPose();
-  }, [])
 
+  },[] )
+  loadHandPose();
 
   return (
     <>
@@ -283,8 +265,8 @@ function App() {
         bottom: 0,
         textAlign: "center",
         zIndex: 11,
-        width: "0%",
-        height: "0%",
+        width: 0,
+        height: 0,
       }}
         videoConstraints={{
           width: 998,
