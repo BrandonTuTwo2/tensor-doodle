@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GestureDescription, Finger, FingerCurl, GestureEstimator } from "fingerpose";
 
 
-let counter  = 0;
+let counter = 0;
 
 // Points for fingers
 const fingerJoints = {
@@ -34,94 +34,72 @@ function App() {
   const webCamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const drawingCtxRef  = useRef<CanvasRenderingContext2D | null>(null);
+  const drawingCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isPressed, setIsPressed] = useState(false);
   let isRunning = true
 
-
-  //does this need to be an array?
   const gestureEstimator = new GestureEstimator([pointerGesture])
   const handPoseConfig = {
     maxContinuousChecks: 15,
     detectionConfidence: 0.95,
-    //iouThreshold: ;
     scoreThreshold: 0.9,
   }
 
   const loadHandPose = async () => {
     const model = await handpose.load(handPoseConfig);
-    //console.log("MODEL HAS LOADED");
-    //console.log(model)
-
     if (typeof webCamRef.current !== "undefined" && webCamRef.current !== null && webCamRef.current.video?.readyState === 4) {
       const vidWidth = webCamRef.current.video.videoWidth;
       const vidHeight = webCamRef.current.video.videoHeight;
 
-      //I only need to map this once, thi is what prevents from disapearing, might not even need the second canvas
       if (canvasRef.current == null || drawingCanvasRef.current == null) return;
       drawingCanvasRef.current.width = vidWidth;
       drawingCanvasRef.current.height = vidHeight;
     }
-
 
     const detect = async (model: handpose.HandPose) => {
       if (typeof webCamRef.current !== "undefined" && webCamRef.current !== null && webCamRef.current.video?.readyState === 4) {
         const videoFeed = webCamRef.current.video;
         const vidWidth = webCamRef.current.video.videoWidth;
         const vidHeight = webCamRef.current.video.videoHeight;
-  
+
         webCamRef.current.video.width = vidWidth;
         webCamRef.current.video.height = vidHeight;
-        
-  
-        //This is whats making the drawings dissapear but also mapping the hand positions
+
         if (canvasRef.current == null || drawingCanvasRef.current == null) return;
         canvasRef.current.width = vidWidth;
         canvasRef.current.height = vidHeight;
 
 
         const predictions = await model.estimateHands(videoFeed, true);
-        
-        if(canvasRef.current === null) return;
+
+        if (canvasRef.current === null) return;
         const ctx = canvasRef.current.getContext("2d");
         if (ctx == null) return;
         ctxRef.current = ctx
-
-
 
         //only draw hand when its actually present
         if (predictions[0] !== undefined) {
           //pointer detection
           const gestureEstimation = gestureEstimator.estimate(predictions[0].landmarks, 5);
-          
           if (gestureEstimation.gestures.length > 0) {
-            ////console.log("Pointer is present?");
-            ////console.log(gestureEstimation);
-            // 8 is the top of the pointer finger 
             const landmarks = predictions[0].landmarks
             const xCord = landmarks[8][0]
             const yCord = landmarks[8][1]
             counter += 1
-            if(drawingCtxRef.current === null) return;
-            if(isRunning) {
+            if (drawingCtxRef.current === null) return;
+            if (isRunning) {
               drawingCtxRef.current.beginPath();
               drawingCtxRef.current.moveTo(xCord, yCord);
-              //its not setting to true?
               setIsPressed(true);
               isRunning = false;
             }
-
-            ////console.log(`HERE IS ISPRESSED ${isPressed}`);
-            ////console.log(`X:${xCord} Y:${yCord}`);
-            if(counter == 7){
+            if (counter == 10) {
               startDrawingFinger(xCord, yCord);
               counter = 0;
             }
           } else {
-            //console.log("DONE");
-            if(drawingCtxRef.current === null) return;
-            //console.log("CLOSED");
+            if (drawingCtxRef.current === null) return;
             drawingCtxRef.current.closePath();
             setIsPressed(false);
             isRunning = true;
@@ -145,27 +123,19 @@ function App() {
     drawingCtxRef.current.moveTo(e.nativeEvent.offsetX,
       e.nativeEvent.offsetY);
     setIsPressed(true);
-    ////console.log(e)
   };
 
   const startDrawingFinger = (offsetX: number, offsetY: number) => {
-    ////console.log(`HERE IS ISPRESSED ${isPressed}`);
-    //if (!isPressed) return;
     if (drawingCtxRef.current == null) return;
-    //console.log(`X:${offsetX} Y:${offsetY}`);
     drawingCtxRef.current.lineCap = "round";
     drawingCtxRef.current.strokeStyle = "black";
     drawingCtxRef.current.lineWidth = 5;
-    drawingCtxRef.current.lineTo(offsetX,offsetY)
+    drawingCtxRef.current.lineTo(offsetX, offsetY)
     drawingCtxRef.current.stroke();
-    //drawingCtxRef.current.arc(offsetX, offsetY, 5, 0, 3 * Math.PI);
-    //drawingCtxRef.current.fill()
-    //ctxRef.current.closePath();
-
   }
 
   const endDrawing = () => {
-    
+
     drawingCtxRef.current?.closePath();
     setIsPressed(false);
 
@@ -176,7 +146,7 @@ function App() {
 
     drawingCtxRef.current?.lineTo(e.nativeEvent.offsetX,
       e.nativeEvent.offsetY)
-      drawingCtxRef.current?.stroke();
+    drawingCtxRef.current?.stroke();
   };
 
   const clear = () => {
@@ -217,7 +187,7 @@ function App() {
             ctxRef.current.stroke();
           }
         }
-        
+
         for (let i = 0; i < landmarks.length; i++) {
           const x = landmarks[i][0];
           const y = landmarks[i][1];
@@ -245,9 +215,13 @@ function App() {
     const ctx = canvas.getContext("2d");
     if (ctx == null) return;
     drawingCtxRef.current = ctx;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 3;
+    drawingCtxRef.current = ctx;
+    loadHandPose();
+  }, [])
 
-  },[] )
-  loadHandPose();
 
   return (
     <>
@@ -285,22 +259,22 @@ function App() {
         zIndex: 999,
         width: 998,
         height: 698,
-      }} /*onMouseDown={startDrawing} onMouseMove={updateDrawing} onMouseUp={endDrawing}*//>
+      }} />
 
-  <canvas ref={drawingCanvasRef} style={{
-          position: "absolute",
-          margin: "auto",
-          display: "block",
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          textAlign: "center",
-          zIndex: 999,
-          width: 998,
-          height: 698,
-        }} onMouseDown={startDrawing} onMouseMove={updateDrawing} onMouseUp={endDrawing}/>
-      </>
+      <canvas ref={drawingCanvasRef} style={{
+        position: "absolute",
+        margin: "auto",
+        display: "block",
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        textAlign: "center",
+        zIndex: 999,
+        width: 998,
+        height: 698,
+      }} onMouseDown={startDrawing} onMouseMove={updateDrawing} onMouseUp={endDrawing} />
+    </>
   )
 }
 
